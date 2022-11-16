@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CaptionCam - 字幕カメラ</title>
+  <link href="style.css?20221116v" rel="stylesheet">
+  <script src="app.js?20221116v" defer></script>
+</head>
+<body>
+  <div id="content" onclick="void(0)"><!-- Safari Mobileバグ対応 https://developer.mozilla.org/ja/docs/Web/API/Element/click_event -->
+    <div id="caption-container">
+      <div id="caption">（音声認識の起動中...）</div>
+    </div>
+    <div id="camera-container">
+      <video id="camera" autoplay muted playsinline></video><!-- iOSでのカメラ表示のためmutedとplaysinlineを追加 -->
+    </div>
+    <div id="config">
+      <div id="config-camera-container">
+        <label for="config-camera-list">カメラ</label>
+        <select id="config-camera-list"></select>
+      </div>
+      <div id="config-caption-position-container" class="button-style-radio">
+        <label for="config-caption-position">字幕</label>
+        <input type="radio" name="position" value="bottom" id="config-caption-position-bottom">
+        <label for="config-caption-position-bottom" class="buttonlike">下</label>
+        <input type="radio" name="position" value="top" id="config-caption-position-top">
+        <label for="config-caption-position-top" class="buttonlike">上</label>
+        <input type="radio" name="position" value="left" id="config-caption-position-left">
+        <label for="config-caption-position-left" class="buttonlike">左</label>
+        <input type="radio" name="position" value="right" id="config-caption-position-right">
+        <label for="config-caption-position-right" class="buttonlike">右</label>
+        </select>
+      </div>
+      <div id="config-font-size-container">
+        <label for="config-font-size">文字</label>
+        <button id="config-font-size-decrement">▼</button>
+        <input id="config-font-size" type="number" max="20" min="3" step="0.1">
+        <button id="config-font-size-increment">▲</button>
+      </div>
+      <div id="config-line-height-container">
+        <label for="config-line-height">行高さ</label>
+        <button id="config-line-height-decrement">▼</button>
+        <input id="config-line-height" type="number" max="200" min="100">
+        <button id="config-line-height-increment">▲</button>
+      </div>
+      <div>
+        <button id="config-download-captions">字幕ダウンロード</button>
+      </div>
+      <details>
+        <summary>開発者用</summary>
+        <button id="config-download-oplog">動作log DL</button>
+      </details>
+    </div>
+  </div>
+</body>
+</html>
