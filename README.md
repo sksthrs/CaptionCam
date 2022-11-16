@@ -2,6 +2,7 @@
 Camera with automated caption on your browser（Webブラウザで動作する自動字幕つきカメラ）
 
 # デモ
+https://sksthrs.github.io/CaptionCam/
 
 # 元ネタ
 下記リポジトリのアイデアを別方法で実装しました。
