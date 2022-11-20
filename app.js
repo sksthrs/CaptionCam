@@ -406,8 +406,6 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     position: 'bottom'
   }
 
-  const configOnStorageRaw = localStorage.getItem(STORAGE_KEY)
-
   /**
    * 設定オブジェクトを画面に反映する。
    * @param {any} config 
@@ -415,12 +413,15 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   function singleConfigToScreen(config) {
     if (config.fontSize != null) {
       setCaptionFontSize(config.fontSize)
+      log(`fontSize=${config.fontSize}`)
     }
     if (config.lineHeight != null) {
       setCaptionLineHeight(config.lineHeight)
+      log(`lineHeight=${config.lineHeight}`)
     }
     if (setLayout(config.position)) {
       setPositionRadioButton(config.position)
+      log(`position=${config.position}`)
     }
   }
 
@@ -428,8 +429,10 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    * 設定（localStorageまたはデフォルト値）を画面に反映する。
    */
   function configToScreen() {
+    log(`configToScreen default settings : ${JSON.stringify(configDefault)}`)
     singleConfigToScreen(configDefault)
     const configJson = localStorage.getItem(STORAGE_KEY)
+    log(`config(${STORAGE_KEY}) : ${configJson}`)
     if (configJson != null && configJson.length > 0) {
       try {
         const configStorage = JSON.parse(configJson)
@@ -445,12 +448,9 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    * 画面上の現在の設定をlocalStorageに保存する。
    */
   function screenToConfig() {
-    const config = {
-      fontSize: fontSizeInput.value,
-      lineHeight: lineHeightInput.value,
-      position: 'bottom'
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+    const newConfig = JSON.stringify(config)
+    localStorage.setItem(STORAGE_KEY, newConfig)
+    log(`screenToConfig : ${newConfig}`)
   }
 
   /**
@@ -599,6 +599,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
   cameraArea.addEventListener('play', ev => {
     stretchCameraArea()
+    startSpeechRecognition()
   })
 
   /**
@@ -608,6 +609,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    * (3) 少なくとも縦辺または横辺のいずれかはコンテナに接する。
    */
   function stretchCameraArea() {
+    log(`stretchCameraArea video:(${cameraArea.videoWidth},${cameraArea.videoHeight})`)
     // カメラが利用できない場合は何もしない。
     if (cameraArea.videoWidth < 1 || cameraArea.videoHeight < 1) return
     const cameraAspectRatio = cameraArea.videoWidth / cameraArea.videoHeight
@@ -808,13 +810,24 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   recognizerOptions.onUpdated = (text) => { updateCaption(text) }
   const speechRecognizer = new SpeechRecognizer(recognizerOptions)
 
-  function startSpeechRecognition() {
+  /**
+   * 音声認識を準備する。
+   */
+  function prepareSpeechRecognition() {
     speechRecognizer.init()
-    // 一部のブラウザでは、かなり待たないとエラー（WindowsのWebView2は2秒だとNG）
-    window.setTimeout(() => {
-      updateCaption('') // 最初は待機中という旨が表示されているのでクリア
-      speechRecognizer.start()
-    } , 3000)
+  }
+
+  /**
+   * 音声認識を開始する。
+   * WebView2ではカメラ初期化前に音声認識を行うとエラーになるため、タイミング遅延用に独立関数とした。
+   */
+  function startSpeechRecognition() {
+    updateCaption('') // 最初は待機中という旨が表示されているのでクリア
+    speechRecognizer.start()
+    // window.setTimeout(() => {
+    //   updateCaption('') // 最初は待機中という旨が表示されているのでクリア
+    //   speechRecognizer.start()
+    // } , 10)
   }
 
   // ========== ========== カメラ関連 ========== ==========
@@ -886,31 +899,78 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     const constraints = {
       audio: false,
       video: {
-        facingMode: 'user',
+        facingMode: 'user'
       }
     }
 
     const currentCamera = cameraList.value
+    // 理由は不明だが、iOS/SafaritとAndroid/Chromeで、縦長時にwidth,heightを指定すると、縦横の寸法が逆の映像になってしまう。
+    if (window.innerWidth > window.innerHeight) {
+      constraints.video['width'] = { ideal: window.innerWidth }
+      constraints.video['height'] = { ideal: window.innerHeight }
+    }
     if (currentCamera != null && currentCamera !== '') {
       constraints.video['deviceId'] = { exact : currentCamera }
     }
-    // console.log(`Constraints : ${JSON.stringify(constraints)}`)
+    log(`Constraints : ${JSON.stringify(constraints)}`)
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
-      cameraArea.srcObject = stream
       const devices = await navigator.mediaDevices.enumerateDevices()
-      console.log(`got devices : ${JSON.stringify(devices)}`)
-      updateCameraList(devices)
+      log(`got devices : ${JSON.stringify(devices)}`)
+      const nCam = updateCameraList(devices)
+      if (nCam < 1) {
+        // カメラがなかった場合（例外になるような気もする）
+        errorOnCameraSetup('カメラが存在しないようです。音声認識は別途試みます。')
+      }
+      cameraArea.srcObject = stream
     } catch(err) {
-      console.log(`error in getUserMedia. info=${err}`)
+      log(`error in getUserMedia. info=${err}`)
+      errorOnCameraSetup(`カメラ初期化でエラーが発生しました（${err}）。\n音声認識は別途試みます。`)
+    }
+  }
+
+  /**
+   * カメラ初期化が失敗した場合の処理（エラーメッセージの表示と初期化後処理）
+   * @param {string} message 表示するエラーメッセージ
+   */
+  function errorOnCameraSetup(message) {
+    alert(message)
+    doPostCameraSetup()
+  }
+
+  // ========== ========== PWA関連 ========== ==========
+
+  /**
+   * PWA用にService Workerを設定する。
+   */
+  function setupServiceWorker() {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+        .then((registration) => {
+          console.log(`[Main] ServiceWorker registration finished. Scope:${registration.scope}`);
+        })
+        .catch((reason) => {
+          console.log(`[Main] ServiceWorker registratio failed. Reason:${reason}`);
+        });
+      });
     }
   }
 
   // ========== ========== 処理開始 ========== ==========
 
+  /**
+   * カメラ初期化の完了後に行うべき処理
+   * （ここでは音声認識開始としている。WebView2ではカメラ初期化完了前に開始すると失敗になるため）
+   */
+  function doPostCameraSetup() {
+    startSpeechRecognition()
+  }
+
   log(`User Agent : ${navigator.userAgent}`)
+  setupServiceWorker()
   configToScreen()
   setupCamera()
-  startSpeechRecognition()
+  prepareSpeechRecognition()
 })
