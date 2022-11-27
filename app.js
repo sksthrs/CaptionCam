@@ -362,6 +362,12 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   const LINE_HEIGHT_MAX = 200
   const LINE_HEIGHT_MIN = 100
 
+  /** @type {number} SpeechRecognitionオブジェクト生成から音声認識開始までの待ち時間 */
+  const WAIT_SPEECH_RECOGNITION = location.hash.toLowerCase() === '#app' ? 2000 : 10
+  // WebView2だと、これを1000msec程度は確保しないと失敗する模様。
+  // このため、WebView2に与えるURLは「#app」をつけることとして区別する。
+  // 通常のブラウザでは、このような待ち時間は本来不要と思われる。
+
   /** @type {array<string>} ログ */
   const logMessages = []
 
@@ -599,7 +605,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
   cameraArea.addEventListener('play', ev => {
     stretchCameraArea()
-    startSpeechRecognition()
+    doPostCameraSetup()
   })
 
   /**
@@ -965,12 +971,15 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    * （ここでは音声認識開始としている。WebView2ではカメラ初期化完了前に開始すると失敗になるため）
    */
   function doPostCameraSetup() {
-    startSpeechRecognition()
+    prepareSpeechRecognition()
+    log(`speech recognition wait : ${WAIT_SPEECH_RECOGNITION}[msec]`)
+    window.setTimeout(() => {
+      startSpeechRecognition()
+    }, WAIT_SPEECH_RECOGNITION)
   }
 
   log(`User Agent : ${navigator.userAgent}`)
   setupServiceWorker()
   configToScreen()
   setupCamera()
-  prepareSpeechRecognition()
 })
