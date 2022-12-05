@@ -914,9 +914,11 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
     const currentCamera = cameraList.value
     // 理由は不明だが、iOS/SafaritとAndroid/Chromeで、縦長時にwidth,heightを指定すると、縦横の寸法が逆の映像になってしまう。
-    if (window.innerWidth > window.innerHeight) {
-      constraints.video['width'] = { ideal: window.innerWidth }
-      constraints.video['height'] = { ideal: window.innerHeight }
+    const wholeWidth = screen.width
+    const wholeHeight = screen.height
+    if (wholeWidth > wholeHeight) {
+      constraints.video['width'] = { ideal: wholeWidth }
+      constraints.video['height'] = { ideal: wholeHeight }
     }
     if (currentCamera != null && currentCamera !== '') {
       constraints.video['deviceId'] = { exact : currentCamera }
