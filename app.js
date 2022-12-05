@@ -12,13 +12,13 @@ class SpeechLog {
     /** @type {number} 現在の音声認識結果として表示可能な文字列の最大の長さ */
     this.maxCharacters = 300
 
-    /** @type {array<SpeechRecognitionResult>} 音声認識が確定した文字列の配列 */
+    /** @type {Array<SpeechRecognitionResult>} 音声認識が確定した文字列の配列 */
     this.wholeLog = []
 
-    /** @type {array<SpeechRecognitionResult>} 音声認識が確定した「現状の」結果の配列 */
+    /** @type {Array<SpeechRecognitionResult>} 音声認識が確定した「現状の」結果の配列 */
     this.currentResults = []
 
-    /** @type {array<SpeechRecognitionResult>} 未確定の音声認識結果の配列 */
+    /** @type {Array<SpeechRecognitionResult>} 未確定の音声認識結果の配列 */
     this.interimResults = []
 
     /** @type {number} 音声認識が確定した最大のindex（開始前は-1） */
@@ -70,7 +70,7 @@ class SpeechLog {
 
   /**
    * 配列の最後の項目を取得する。配列そのものは変更しない。
-   * @param {array<T>} array 
+   * @param {Array<T>} array 
    * @returns {T | null} 配列の最後の項目（配列が空の場合はnull）
    */
   getLastItem(array) {
@@ -113,7 +113,7 @@ class SpeechLog {
    * 音声認識結果から、今回更新されたもののうち、有効なものを抽出する。
    * あわせて、indexFinishedの値を更新する。
    * @param {SpeechRecognitionEvent} result 
-   * @returns {array<SpeechRecognitionResult>} 音声認識結果の更新分のうち有効なものの配列
+   * @returns {Array<SpeechRecognitionResult>} 音声認識結果の更新分のうち有効なものの配列
    */
   _extractUpdate(result) {
     const updatedItems = []
@@ -193,10 +193,10 @@ class SpeechLog {
 
   /**
    * これまでの全ての字幕ログを一括で取得する。
-   * @returns {array<string>} 字幕ログ
+   * @returns {Array<string>} 字幕ログ
    */
   getWholeLog() {
-    /** @type {array<string>} 字幕ログ */
+    /** @type {Array<string>} 字幕ログ */
     const log = []
     this.onLog(`wholeLog(${this.wholeLog.length})`)
     this.wholeLog.forEach((r) => {
@@ -368,7 +368,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   // このため、WebView2に与えるURLは「#app」をつけることとして区別する。
   // 通常のブラウザでは、このような待ち時間は本来不要と思われる。
 
-  /** @type {array<string>} ログ */
+  /** @type {Array<string>} ログ */
   const logMessages = []
 
   /**
