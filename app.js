@@ -314,14 +314,17 @@ class SpeechRecognizer {
     }
     this.recognizer.onerror = (ev) => {
       window.speechRecognizerError = ev
-      this.onLog(`onerror(${ev.error}) detail:${JSON.stringify(ev)}`)
+      this.onLog(`onerror(${ev.error}) detail:${JSON.stringify(ev)} msg:${ev.message}`)
       // start後、onspeechstartせずエラーになる場合は音声認識非対応ブラウザとみなす。
-      if (this.isSpeechAvailable !== true) {
+      // ただしno-speech（音声が入らない場合）などは別問題としておく。
+      if (this.isSpeechAvailable !== true 
+        && ev.error !== 'no-speech' && ev.error !== 'aborted') 
+      {
         this.available = false
         this.onLog('this browser seems Speech-Recognition-Not-Available because error before onspeechstart.')
-        this.onCritical(`エラー種別:${ev.error}`)
+        this.onCritical(`エラー種別:${ev.error} (${ev.message})`)
       }
-      // そのままonendに到達して自動的に再開を試みるはずなので何もしない。
+      // 継続可能な場合はonendに到達して自動的に再開を試みるはずなので何もしない。
     }
     this.recognizer.onnomatch = () => {
       this.onLog('onnomatch')
