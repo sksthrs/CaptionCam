@@ -653,7 +653,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
   /** 設定領域の表示／非表示を切り替える */
   function toggleConfig() {
-    if (configArea.style.display === 'flex') {
+    if (configArea.style.display !== 'none') {
       hideConfig()
     } else {
       showConfig()
