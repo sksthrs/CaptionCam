@@ -30,9 +30,9 @@ class SpeechLog {
 
   /** 
    * 音声認識結果の現状を初期化する（履歴は初期化しない）。
-   * 音声認識のstartごとに実行する。
+   * 音声認識のstartごと、および音声認識結果クリア時に実行する。
    */
-  init() {
+  reset() {
     if (this.currentResults.length > 0) {
       this.wholeLog.push(...this.currentResults)
     }
@@ -306,7 +306,7 @@ class SpeechRecognizer {
     this.recognizer.onaudioend = () => { this.onLog('onaudioend') }
     this.recognizer.onend = () => {
       this.onLog('onend')
-      this.speechLog.init()
+      this.speechLog.reset()
       // 無音が続くと音声認識が終了するので、自動的に再開
       if (this.available) {
         this.start()
@@ -343,7 +343,7 @@ class SpeechRecognizer {
   start() {
     this.onLog('SpeechRecognizer.start() begins.')
     if (this.available !== true || this.recognizer == null) return false
-    this.speechLog.init()
+    this.speechLog.reset()
     this.recognizer.start()
     return true
   }
