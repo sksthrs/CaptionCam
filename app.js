@@ -809,6 +809,8 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
   // ========== ========== 音声認識関連オブジェクト ========== ==========
 
+  let clearCaptionTimerId = -1
+  const CLEAR_CAPTION_TIMER_MSEC = 10000
   const speechLog = new SpeechLog((message) => { log(message) })
   const recognizerOptions = new SpeechRecognizerOptions()
   recognizerOptions.speechLog = speechLog
@@ -816,8 +818,21 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   recognizerOptions.onCritical = (message) => {
     alert(`音声認識で重大なエラー（${message}）が発生しました。音声認識対応ブラウザ（PCならChromeやEdge）をご利用ください。`)
   }
-  recognizerOptions.onUpdated = (text) => { updateCaption(text) }
+  recognizerOptions.onUpdated = (text) => {
+    updateCaption(text)
+    setClearCaptionTimer()
+  }
   const speechRecognizer = new SpeechRecognizer(recognizerOptions)
+
+  function setClearCaptionTimer() {
+    if (clearCaptionTimerId >= 0) {
+      clearTimeout(clearCaptionTimerId)
+    }
+    clearCaptionTimerId = setTimeout(() => {
+      updateCaption('')
+      speechLog.reset()
+    } , CLEAR_CAPTION_TIMER_MSEC)
+  }
 
   /**
    * 音声認識を準備する。
