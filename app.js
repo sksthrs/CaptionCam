@@ -405,32 +405,51 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
   // ========== ========== 設定 ========== ==========
 
-  /** 設定のデフォルト値 */
-  const configDefault = {
-    /** @type {number} フォントサイズ（vhで指定）。デフォルト値は「1行=表示領域の10%」になるよう設定 */
-    fontSize: 7.6, 
-    /** @type {number} 行の高さの、フォント高さに対する比率の%値。7.6*130/100=9.88≒10 */
-    lineHeight: 130,
-    /** @type {'bottom'|'top'|'left'|'right'} 字幕領域の位置（あわせて他の配置も変化する） */
-    position: 'bottom'
+  /** 設定データ */
+  const config = makeDefaultConfig()
+
+  function makeDefaultConfig() {
+    return {
+      /** @type {string} フォントファミリ */
+      fontFamily: 'sans-serif',
+      /** @type {boolean} 太字 */
+      isBold: false,
+      /** @type {number} フォントサイズ（vhで指定）。デフォルト値は「1行=表示領域の10%」になるよう設定 */
+      fontSize: 7.6, 
+      /** @type {number} 行の高さの、フォント高さに対する比率の%値。7.6*130/100=9.88≒10 */
+      lineHeight: 130,
+      /** @type {'bottom'|'top'|'left'|'right'} 字幕領域の位置（あわせて他の配置も変化する） */
+      position: 'bottom'
+    }
   }
 
   /**
    * 設定オブジェクトを画面に反映する。
-   * @param {any} config 
+   * @param {any} cfg 
    */
-  function singleConfigToScreen(config) {
-    if (config.fontSize != null) {
-      setCaptionFontSize(config.fontSize)
-      log(`fontSize=${config.fontSize}`)
+  function singleConfigToScreen(cfg) {
+    if (cfg.fontFamily != null) {
+      if (setFontFamily(cfg.fontFamily)) {
+        log(`fontFamily=${cfg.fontFamily}`)
+      } else {
+        cfg.fontFamily = 'sans-serif'
+      }
     }
-    if (config.lineHeight != null) {
-      setCaptionLineHeight(config.lineHeight)
-      log(`lineHeight=${config.lineHeight}`)
+    if (cfg.isBold === true) {
+      setFontWeight(true)
+      log('bold')
     }
-    if (setLayout(config.position)) {
-      setPositionRadioButton(config.position)
-      log(`position=${config.position}`)
+    if (cfg.fontSize != null) {
+      setCaptionFontSize(cfg.fontSize)
+      log(`fontSize=${cfg.fontSize}`)
+    }
+    if (cfg.lineHeight != null) {
+      setCaptionLineHeight(cfg.lineHeight)
+      log(`lineHeight=${cfg.lineHeight}`)
+    }
+    if (setLayout(cfg.position)) {
+      setPositionRadioButton(cfg.position)
+      log(`position=${cfg.position}`)
     }
   }
 
@@ -438,19 +457,24 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    * 設定（localStorageまたはデフォルト値）を画面に反映する。
    */
   function configToScreen() {
-    log(`configToScreen default settings : ${JSON.stringify(configDefault)}`)
-    singleConfigToScreen(configDefault)
+    log(`configToScreen default settings : ${JSON.stringify(config)}`)
     const configJson = localStorage.getItem(STORAGE_KEY)
     log(`config(${STORAGE_KEY}) : ${configJson}`)
     if (configJson != null && configJson.length > 0) {
       try {
         const configStorage = JSON.parse(configJson)
-        singleConfigToScreen(configStorage)
+        for (let key in configStorage) {
+          if (config.hasOwnProperty(key)) {
+            config[key] = configStorage[key]
+          }
+        }
       } catch(err) {
         log(`JSON parse error : ${err}`)
         localStorage.removeItem(STORAGE_KEY)
       }
     }
+    log(`configToScreen final settings : ${JSON.stringify(config)}`)
+    singleConfigToScreen(config)
   }
 
   /**
@@ -571,6 +595,42 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   const captionArea = document.getElementById('caption')
 
   /**
+   * 字幕のフォントファミリを設定する。
+   * @param {string} font 
+   * @return {boolean} trueなら設定は有効
+   */
+  function setFontFamily(font) {
+    if (typeof font !== 'string') return false
+    const fontFamilies = enumerateFontFamilyOptions()
+    if (fontFamilies.includes(config.fontFamily) !== true) {
+      log(`setFontFamily : parameter(${font}) is not in options.`)
+      return false
+    }
+    const fontConfig = font.endsWith('sans-serif') ? font : font + ",sans-serif"
+    config.fontFamily = font
+    captionContainer.style.fontFamily = fontConfig
+    if (fontFamilySelector.value !== font) {
+      fontFamilySelector.value = font
+    }
+    return true
+  }
+
+  /**
+   * 字幕のフォントウエイトを設定する（normalかboldのみ）。
+   * @param {boolean} isBold 太字ならtrue
+   * @returns {boolean} trueなら設定は有効
+   */
+  function setFontWeight(isBold) {
+    if (isBold !== true && isBold !== false) return false
+    config.isBold = isBold
+    captionContainer.style.fontWeight = isBold ? 'bold' : 'normal'
+    if (fontWeightInput.checked != isBold) {
+      fontWeightInput.checked = isBold
+    }
+    return true
+  }
+
+  /**
    * 字幕のフォントサイズを設定する。
    * @param {number} size フォントサイズ（viewport高さに対するパーセント値）
    * @return {boolean} trueなら設定は有効
@@ -666,6 +726,43 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   cameraList.addEventListener('change', ev => {
     setupCamera()
   })
+
+  /** @type {HTMLSelectElement} フォント名一覧 */
+  const fontFamilySelector = document.getElementById('config-font-family-list')
+  fontFamilySelector.addEventListener('change', ev => {
+    onFontFamilySelectionChanged()
+  })
+
+  /**
+   * フォントファミリの選択肢のvalueを列挙する。
+   * @return {Array<string>} フォントファミリ選択肢のvalueの配列
+   */
+  function enumerateFontFamilyOptions() {
+    /** @type {Array<string>} */
+    let res = []
+    for (let opt of fontFamilySelector.options) {
+      res.push(opt.value)
+    }
+    return res
+  }
+
+  function onFontFamilySelectionChanged() {
+    if (setFontFamily(fontFamilySelector.value)) {
+      screenToConfig()
+    }
+  }
+
+  /** @type {HTMLInputElement} 設定の太字設定 */
+  const fontWeightInput = document.getElementById('config-font-bold')
+  fontWeightInput.addEventListener('change', ev => {
+    onFontWeightInputChanged()
+  })
+
+  function onFontWeightInputChanged() {
+    if (setFontWeight(fontWeightInput.checked)) {
+      screenToConfig()
+    }
+  }
 
   /** @type {HTMLInputElement} 設定のフォントサイズ設定欄 */
   const fontSizeInput = document.getElementById('config-font-size')

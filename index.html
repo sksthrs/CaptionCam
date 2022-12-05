@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Caption-Camera</title>
-  <link href="style.css?20221127a" rel="stylesheet">
-  <script src="app.js?20221127a" defer></script>
+  <link href="style.css?20221206e" rel="stylesheet">
+  <script src="app.js?20221206e" defer></script>
   <!-- OGP -->
   <meta name="description" content="Caption-Camera : 字幕つきWebカメラ">
   <meta property="og:title" content="Caption-Camera : 字幕つきWebカメラ">
@@ -33,7 +33,7 @@
         <label for="config-camera-list">カメラ</label>
         <select id="config-camera-list"></select>
       </div>
-      <div id="config-caption-position-container" class="button-style-radio">
+      <div id="config-caption-position-container" class="button-style">
         <label for="config-caption-position">字幕</label>
         <input type="radio" name="position" value="bottom" id="config-caption-position-bottom">
         <label for="config-caption-position-bottom" class="buttonlike">下</label>
@@ -43,7 +43,18 @@
         <label for="config-caption-position-left" class="buttonlike">左</label>
         <input type="radio" name="position" value="right" id="config-caption-position-right">
         <label for="config-caption-position-right" class="buttonlike">右</label>
+      </div>
+      <div id="config-font-family-container" class="button-style">
+        <span>フォント</span>
+        <select id="config-font-family-list">
+          <option value="sans-serif">標準（ゴシック体）</option>
+          <option value="'UD デジタル 教科書体 NP-R'">UDデジタル教科書体</option>
+          <option value="'Hiragino Kaku Gothic ProN','Hiragino Sans'">ヒラギノ角ゴシック</option>
+          <option value="メイリオ">メイリオ（Windows）</option>
+          <option value="HGP創英角ﾎﾟｯﾌﾟ体">ポップ体（Windows）</option>
         </select>
+        <input type="checkbox" id="config-font-bold" name="config-font-bold">
+        <label for="config-font-bold" class="buttonlike">太字</label>
       </div>
       <div id="config-font-size-container">
         <label for="config-font-size">文字</label>

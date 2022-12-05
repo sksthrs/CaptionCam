@@ -104,11 +104,11 @@ body {
   width: 3em;
 }
 
-.button-style-radio input {
+.button-style input {
   display: none;
 }
 
-.button-style-radio label.buttonlike {
+.button-style label.buttonlike {
   background-color: #202020;
   border: 2px solid #505050;
   /* 以下は選択、非選択で共通の設定 */
@@ -117,7 +117,7 @@ body {
   padding-right: 0.2em;
 }
 
-.button-style-radio input:checked + label.buttonlike {
+.button-style input:checked + label.buttonlike {
   background-color: #006000;
   border: 2px solid #40a040;
 }
