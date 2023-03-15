@@ -133,7 +133,7 @@ class SpeechLog {
     }
     // 調査用に数だけログに保存
     if (updatedItems.length > 0) {
-      this.onLog(`onresult new items(${updatedItems.length}) index=${result.resultIndex}`)
+      //this.onLog(`onresult new items(${updatedItems.length}) index=${result.resultIndex}`)
     }
     return updatedItems
   }
@@ -410,6 +410,8 @@ window.addEventListener('DOMContentLoaded', (ev) => {
 
   function makeDefaultConfig() {
     return {
+      /** @type {'auto'|'mute'|'input'} 字幕ソース（音声認識、字幕領域非表示、手動入力） */
+      source: 'auto',
       /** @type {string} フォントファミリ */
       fontFamily: 'sans-serif',
       /** @type {boolean} 太字 */
@@ -418,6 +420,8 @@ window.addEventListener('DOMContentLoaded', (ev) => {
       fontSize: 7.6, 
       /** @type {number} 行の高さの、フォント高さに対する比率の%値。7.6*130/100=9.88≒10 */
       lineHeight: 130,
+      /** @type {number} 自動で字幕を消去するまでの秒数 */
+      clearTime: 10,
       /** @type {'bottom'|'top'|'left'|'right'} 字幕領域の位置（あわせて他の配置も変化する） */
       position: 'bottom'
     }
@@ -428,6 +432,10 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    * @param {any} cfg 
    */
   function singleConfigToScreen(cfg) {
+    if (setSource(cfg.source)) {
+      setSourceRadioButton(cfg.source)
+      log(`source=${cfg.source}`)
+    }
     if (cfg.fontFamily != null) {
       if (setFontFamily(cfg.fontFamily)) {
         log(`fontFamily=${cfg.fontFamily}`)
@@ -446,6 +454,10 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     if (cfg.lineHeight != null) {
       setCaptionLineHeight(cfg.lineHeight)
       log(`lineHeight=${cfg.lineHeight}`)
+    }
+    if (cfg.clearTime != null) {
+      setCaptionAutoClearTime(cfg.clearTime.toString())
+      log(`clearTime=${cfg.clearTime}`)
     }
     if (setLayout(cfg.position)) {
       setPositionRadioButton(cfg.position)
@@ -484,6 +496,31 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     const newConfig = JSON.stringify(config)
     localStorage.setItem(STORAGE_KEY, newConfig)
     log(`screenToConfig : ${newConfig}`)
+  }
+
+  /**
+   * 字幕ソース設定文字列をもとに画面表示を制御する。
+   * @param {'auto' | 'mute' | 'input'} source 字幕ソースの選択を示す文字列
+   * @return {boolean} trueなら画面表示の設定が行われた。
+   */
+  function setSource(source) {
+    // 字幕領域全体は visibility で制御（領域そのものは常に存在する前提）
+    // 音声認識や入力欄コンテナは display で制御（字幕領域の下のdivは常に１つ）
+    if (source === 'auto') {
+      captionContainer.style.visibility = 'visible'
+      captionArea.style.display = 'block'
+      captionInputContainer.style.display = 'none'
+      return true
+    } else if (source === 'mute') {
+      captionContainer.style.visibility = 'hidden'
+      return true
+    } else if (source === 'input') {
+      captionContainer.style.visibility = 'visible'
+      captionArea.style.display = 'none'
+      captionInputContainer.style.display = 'block'
+      return true
+    }
+    return false
   }
 
   /**
@@ -594,6 +631,16 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   /** @type {HTMLDivElement} 字幕表示要素 */
   const captionArea = document.getElementById('caption')
 
+  /** @type {HTMLDivElement} 字幕入力部のコンテナ */
+  const captionInputContainer = document.getElementById('caption-input')
+
+  /** @type {HTMLTextAreaElement} 字幕入力領域 */
+  const captionInputText = document.getElementById('caption-input-text')
+  captionInputText.addEventListener('click', (ev) => {
+    ev.stopImmediatePropagation()
+    ev.stopPropagation()
+  })
+
   /**
    * 字幕のフォントファミリを設定する。
    * @param {string} font 
@@ -609,6 +656,7 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     const fontConfig = font.endsWith('sans-serif') ? font : font + ",sans-serif"
     config.fontFamily = font
     captionContainer.style.fontFamily = fontConfig
+    captionInputText.style.fontFamily = fontConfig
     if (fontFamilySelector.value !== font) {
       fontFamilySelector.value = font
     }
@@ -623,7 +671,9 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   function setFontWeight(isBold) {
     if (isBold !== true && isBold !== false) return false
     config.isBold = isBold
-    captionContainer.style.fontWeight = isBold ? 'bold' : 'normal'
+    const weight = isBold ? 'bold' : 'normal'
+    captionContainer.style.fontWeight = weight
+    captionInputText.style.fontWeight = weight
     if (fontWeightInput.checked != isBold) {
       fontWeightInput.checked = isBold
     }
@@ -638,7 +688,9 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    function setCaptionFontSize(size) {
     if (isNumber(size) !== true || size < FONT_SIZE_MIN || size > FONT_SIZE_MAX) return false
     config.fontSize = size
-    captionArea.style.fontSize = `${size}vh`
+    const fontSize = `${size}vh`
+    captionArea.style.fontSize = fontSize
+    captionInputText.style.fontSize = fontSize 
     if (fontSizeInput.value !== size.toString()) {
       fontSizeInput.value = size.toString()
     }
@@ -653,9 +705,33 @@ window.addEventListener('DOMContentLoaded', (ev) => {
    function setCaptionLineHeight(height) {
     if (isNumber(height) !== true || height < LINE_HEIGHT_MIN || height > LINE_HEIGHT_MAX) return false
     config.lineHeight = height
-    captionArea.style.lineHeight = `${height}%`
+    const lineHeight = `${height}%`
+    captionArea.style.lineHeight = lineHeight
+    captionInputText.style.lineHeight = lineHeight
     if (lineHeightInput.value !== height.toString()) {
       lineHeightInput.value = height.toString()
+    }
+    return true
+  }
+
+  /**
+   * 字幕を自動で消去するまでの秒数を設定する。
+   * @param {string} time 秒数
+   * @return {boolean} trueなら設定は有効
+   */
+  function setCaptionAutoClearTime(time) {
+    if (typeof time !== 'string') return false
+    const timeInt = parseInt(time)
+    const clearTimes = enumerateClearTimeOptions()
+    if (clearTimes.includes(time) !== true) {
+      log(`setCaptionAutoClearTime : parameter(${time}) is not in options.`)
+      return false
+    }
+    log(`setCaptionAutoClearTime : ${time}[sec]`)
+    config.clearTime = timeInt
+    setClearCaptionTimer()
+    if (clearTimeSelector.value !== time) {
+      clearTimeSelector.value = time
     }
     return true
   }
@@ -718,6 +794,29 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     } else {
       showConfig()
     }
+  }
+
+  // 字幕ソース選択ラジオボタンへのイベント設定
+  document.getElementsByName('source').forEach(el => {
+    el.addEventListener('change', ev => {
+      if (ev.target.value !== config.source) {
+        setSource(ev.target.value)
+        config.source = ev.target.value
+        screenToConfig()
+      }
+    })
+  })
+
+  /**
+   * 字幕ソース選択ラジオボタンの値の選択
+   * @param {'auto' | 'mute' | 'input'} source 字幕ソース文字列 
+   */
+  function setSourceRadioButton(source) {
+    document.getElementsByName('source').forEach(el => {
+      if (el.value === source) {
+        el.checked = true
+      }
+    })
   }
 
   /** @type {HTMLSelectElement} 設定のカメラ一覧 */
@@ -861,6 +960,35 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     })
   }
 
+  /** @type {HTMLSelectElement} 字幕自動消去秒数のセレクタ */
+  const clearTimeSelector = document.getElementById('config-auto-clear-list')
+  clearTimeSelector.addEventListener('change', (ev) => {
+    onClearTimeSelectionChanged()
+  })
+
+  /**
+   * 字幕自動消去秒数の選択肢のvalueを列挙する。
+   * @return {Array<string>} 字幕自動消去秒数の選択肢のvalueの配列
+   */
+  function enumerateClearTimeOptions() {
+    /** @type {Array<string>} */
+    let res = []
+    for (let opt of clearTimeSelector.options) {
+      log(`cleartime candidate : ${opt.value}[sec]`)
+      res.push(opt.value)
+    }
+    return res
+  }
+
+  /**
+   * 字幕自動消去秒数を変えた時の処理
+   */
+  function onClearTimeSelectionChanged() {
+    if (setCaptionAutoClearTime(clearTimeSelector.value)) {
+      screenToConfig()
+    }
+  }
+
   /** @type {HTMLButtonElement} 字幕ダウンロードボタン */
   const downloadCaptionButton = document.getElementById('config-download-captions')
   downloadCaptionButton.addEventListener('click', ev => {
@@ -907,7 +1035,6 @@ window.addEventListener('DOMContentLoaded', (ev) => {
   // ========== ========== 音声認識関連オブジェクト ========== ==========
 
   let clearCaptionTimerId = -1
-  const CLEAR_CAPTION_TIMER_MSEC = 10000
   const speechLog = new SpeechLog((message) => { log(message) })
   const recognizerOptions = new SpeechRecognizerOptions()
   recognizerOptions.speechLog = speechLog
@@ -925,10 +1052,14 @@ window.addEventListener('DOMContentLoaded', (ev) => {
     if (clearCaptionTimerId >= 0) {
       clearTimeout(clearCaptionTimerId)
     }
+    const clearTime = ((config.clearTime != null) && isNumber(config.clearTime))
+      ? Math.min(Math.max(config.clearTime, 2), 120) 
+      : 10
+    //log(`setClearCaptionTimer : ${clearTime}[sec]`)
     clearCaptionTimerId = setTimeout(() => {
       updateCaption('')
       speechLog.reset()
-    } , CLEAR_CAPTION_TIMER_MSEC)
+    } , clearTime * 1000)
   }
 
   /**

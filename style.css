@@ -43,7 +43,20 @@ body {
   justify-content: flex-end;
 }
 #caption {
+  display: block;
   width: 100%;
+  background-color: transparent;
+}
+#caption-input {
+  display: none;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+}
+#caption-input-text {
+  color: inherit;
+  width: 100%;
+  height: 100%;
   background-color: transparent;
 }
 

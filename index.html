@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Caption-Camera</title>
-  <link href="style.css?20221206e" rel="stylesheet">
-  <script src="app.js?20221206e" defer></script>
+  <link href="style.css?20230315a" rel="stylesheet">
+  <script src="app.js?20230315a" defer></script>
   <!-- OGP -->
   <meta name="description" content="Caption-Camera : 字幕つきWebカメラ">
   <meta property="og:title" content="Caption-Camera : 字幕つきWebカメラ">
@@ -24,17 +24,27 @@
   <div id="content" onclick="void(0)"><!-- Safari Mobileバグ対応 https://developer.mozilla.org/ja/docs/Web/API/Element/click_event -->
     <div id="caption-container">
       <div id="caption">（音声認識の起動中...）</div>
+      <div id="caption-input"><textarea id="caption-input-text"></textarea></div>
     </div>
     <div id="camera-container">
       <video id="camera" autoplay muted playsinline></video><!-- iOSでのカメラ表示のためmutedとplaysinlineを追加 -->
     </div>
     <div id="config">
+      <duv id="config-caption-source-container" class="button-style">
+        <label for="config-caption-source">字幕</label>
+        <input type="radio" name="source" value="auto" id="config-caption-source-auto">
+        <label for="config-caption-source-auto" class="buttonlike">自動</label>
+        <input type="radio" name="source" value="mute" id="config-caption-source-mute">
+        <label for="config-caption-source-mute" class="buttonlike">停止</label>
+        <input type="radio" name="source" value="input" id="config-caption-source-input">
+        <label for="config-caption-source-input" class="buttonlike">手動入力</label>
+      </duv>
       <div id="config-camera-container">
         <label for="config-camera-list">カメラ</label>
         <select id="config-camera-list"></select>
       </div>
       <div id="config-caption-position-container" class="button-style">
-        <label for="config-caption-position">字幕</label>
+        <label for="config-caption-position">配置</label>
         <input type="radio" name="position" value="bottom" id="config-caption-position-bottom">
         <label for="config-caption-position-bottom" class="buttonlike">下</label>
         <input type="radio" name="position" value="top" id="config-caption-position-top">
@@ -67,6 +77,17 @@
         <button id="config-line-height-decrement">▼</button>
         <input id="config-line-height" type="number" max="200" min="100">
         <button id="config-line-height-increment">▲</button>
+      </div>
+      <div id="config-auto-clear-container" class="button-style">
+        <span>自動消去</span>
+        <select id="config-auto-clear-list">
+          <option value="5">5秒</option>
+          <option value="10">10秒</option>
+          <option value="20">20秒</option>
+          <option value="30">30秒</option>
+          <option value="45">45秒</option>
+          <option value="60">1分</option>
+        </select>
       </div>
       <div>
         <button id="config-download-captions">字幕ダウンロード</button>
